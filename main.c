@@ -7,9 +7,9 @@
 typedef struct prod
 {
     int code;
-    char Description;
-    int Quantity;
-    float Price;
+    char description;
+    int quantity;
+    float price;
     struct prod *prox;
 }Product;
 
