@@ -4,11 +4,14 @@
 #include <limits.h>
 
 
-typedef struct
+typedef struct prod
 {
-    int item;
-    struct item *prox;
-}item;
+    int code;
+    char description;
+    int quantity;
+    float price;
+    struct prod *prox;
+}Product;
 
 
 int main(void){
