@@ -77,6 +77,38 @@ void search_delete(int newCode, Product** lst) {
     }
 }
 
+/* Atualiza produto */
+void update_product(char *flag ,int newCode, Product *lst) {
+    Product *p;
+    int newQuantity;
+    float newPrice;
+    p = lst;
+
+    while (p != NULL && p->code != newCode) {
+        p = p->prox;
+    }
+
+    if (p != NULL) {
+        
+        /* Atualiza a Qauntidade do produto */
+        if (!strcmp(flag, "-q")) {
+            scanf("%d", &newQuantity);
+            p->quantity = newQuantity;
+            printf("Produto %d atualizado \n", newCode);
+        } 
+
+        /* Atualiza o Preco do produto */
+        if (!strcmp(flag, "-v")) {
+            scanf("%f", &newPrice);
+            p->price = newPrice;
+            printf("Produto %d atualizado \n", newCode);
+        } 
+        
+    }else{
+        printf("Produto %d não cadastrado!\n", newCode);
+    }
+}
+
 /* Imprimi a lista de produtos */
 void imprime_lista(Product* lst) {
     Product* p;
@@ -98,9 +130,10 @@ void imprime_lista(Product* lst) {
 Recebe os Comandos (inserir, inserir excluir, atualizar, ...) 
 e chama a função correspondente
 */
-void pronpt(char *comando,Product **lst){
+void pronpt(char *comando, Product **lst){
 
     int newCode;
+    char flag[3];
 
     while (strcmp(comando, "sair"))
     {
@@ -111,11 +144,22 @@ void pronpt(char *comando,Product **lst){
             search_insert(newCode, lst);
             /*imprime_lista(*lst);*/
         }
+
         /* Comando: excluir */
         if (!strcmp(comando,"excluir"))
         {
             scanf("%d", &newCode);
             search_delete(newCode, lst);
+        }
+
+        /* Comando: atualizar */
+        if (!strcmp(comando,"atualizar"))
+        {
+            scanf("%s", flag);
+            scanf("%d", &newCode);
+            update_product(flag, newCode, *lst);
+            imprime_lista(*lst);
+
         }
         /*Recebe um novo comando apos finalizar o comando anterior*/
         scanf("%s", comando);
