@@ -1,3 +1,11 @@
+/******************************************
+*                                         *
+* Gabriel Felipe Barbosa                  *
+* Trabalho Prático                        *
+* Disciplina: Algortimos e Programação II *
+* Professores: Ivone, Mauro e Ronaldo     *
+*                                         *
+*******************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
