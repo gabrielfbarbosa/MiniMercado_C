@@ -22,9 +22,7 @@ typedef struct prod
 
 /* Busca e insere */
 void search_insert(int newCode, Product** lst) {
-    Product* p;
-    Product* q;
-    Product* nova;
+    Product *p, *q, *nova;
     p = NULL;
     q = *lst;
 
@@ -55,18 +53,46 @@ void search_insert(int newCode, Product** lst) {
     }
 }
 
+/* Busca e remove */
+void search_delete(int newCode, Product** lst) {
+    Product *p, *q;
+    p = NULL;
+    q = *lst;
+
+    while (q != NULL && q->code != newCode) {
+        p = q;
+        q = q->prox;
+    }
+
+    if (q != NULL) {
+        if (p != NULL) {
+            p->prox = q->prox;
+        } else {
+            *lst = q->prox;
+        }
+        free(q);
+        printf(" Produto %d excluído com sucesso!\n", newCode);
+    }else{
+        printf("Produto %d não cadastrado!\n", newCode);
+    }
+}
+
 /* Imprimi a lista de produtos */
 void imprime_lista(Product* lst) {
     Product* p;
-
     printf("Lista de Produtos:\n\t");
-    for (p = lst; p != NULL; p = p->prox) {
-        printf("%d;", p->code);
-        printf("%s;", p->description);
-        printf("%d;", p->quantity);
-        printf("%.2f\n", p->price);
-    }
+    if (lst != NULL)
+    {
+        for (p = lst; p != NULL; p = p->prox) {
+            printf("%d;", p->code);
+            printf("%s;", p->description);
+            printf("%d;", p->quantity);
+            printf("%.2f\n\t", p->price);
+        }
+    }else
+        printf("Lista Vazia!\n");
 }
+
 
 /* 
 Recebe os Comandos (inserir, inserir excluir, atualizar, ...) 
@@ -78,13 +104,19 @@ void pronpt(char *comando,Product **lst){
 
     while (strcmp(comando, "sair"))
     {
-        /* pronpt inserir */
+        /* Comando: inserir */
         if (!strcmp(comando,"inserir"))
         {
             scanf("%d", &newCode);
             search_insert(newCode, lst);
+            /*imprime_lista(*lst);*/
         }
-
+        /* Comando: excluir */
+        if (!strcmp(comando,"excluir"))
+        {
+            scanf("%d", &newCode);
+            search_delete(newCode, lst);
+        }
         /*Recebe um novo comando apos finalizar o comando anterior*/
         scanf("%s", comando);
     }
