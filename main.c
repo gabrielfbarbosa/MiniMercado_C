@@ -47,9 +47,9 @@ void search_insert(int newCode, Product** lst) {
         else
             *lst = nova;
 
-        printf("Produto %d inserido com sucesso!\n", newCode);
+        printf(" Produto %d inserido com sucesso!\n", newCode);
     } else {
-        printf("Erro ao inserir o produto %d\n", newCode);
+        printf("[ERROR: Erro ao inserir o produto %d.]\n", newCode);
     }
 }
 
@@ -73,7 +73,7 @@ void search_delete(int newCode, Product** lst) {
         free(q);
         printf(" Produto %d excluído com sucesso!\n", newCode);
     }else{
-        printf("Produto %d não cadastrado!\n", newCode);
+        printf("[ERROR: Produto %d não cadastrado!]\n", newCode);
     }
 }
 
@@ -94,23 +94,51 @@ void update_product(char *flag ,int newCode, Product *lst) {
         if (!strcmp(flag, "-q")) {
             scanf("%d", &newQuantity);
             p->quantity = newQuantity;
-            printf("Produto %d atualizado \n", newCode);
+            printf(" Produto %d atualizado \n", newCode);
         } 
 
         /* Atualiza o Preco do produto */
         if (!strcmp(flag, "-v")) {
             scanf("%f", &newPrice);
             p->price = newPrice;
-            printf("Produto %d atualizado \n", newCode);
+            printf(" Produto %d atualizado \n", newCode);
         } 
         
     }else{
-        printf("Produto %d não cadastrado!\n", newCode);
+        printf("[ERROR: Produto %d não cadastrado!]\n", newCode);
+    }
+}
+
+/* Consulta produto */
+void get_product(Product *lst){
+    Product *p;
+    char searchQuery[25];
+    int cont;
+
+    /*Para saber se encontrou ao menos um produto*/
+    cont = 0;
+    
+    scanf("%s", searchQuery);
+    if (lst != NULL)
+    {
+        for (p = lst; p != NULL; p = p->prox) {
+            if(strstr(p->description, searchQuery)){
+                printf("\t%d - ", p->code);
+                printf("%s - ", p->description);
+                printf("%d - ", p->quantity);
+                printf("%.2f\n", p->price);
+                cont++;
+            }
+        }
+        if (cont == 0)
+        {
+            printf("[ERROR: Nenhum produto encontrado!]\n");
+        }
     }
 }
 
 /* Imprimi a lista de produtos */
-void imprime_lista(Product* lst) {
+void imprime_lista(Product *lst) {
     Product* p;
     printf("Lista de Produtos:\n\t");
     if (lst != NULL)
@@ -158,9 +186,14 @@ void pronpt(char *comando, Product **lst){
             scanf("%s", flag);
             scanf("%d", &newCode);
             update_product(flag, newCode, *lst);
-            imprime_lista(*lst);
-
         }
+
+        /* Comando: consultar */
+        if (!strcmp(comando,"consultar"))
+        {
+            get_product(*lst);
+        }
+
         /*Recebe um novo comando apos finalizar o comando anterior*/
         scanf("%s", comando);
     }
