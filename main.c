@@ -20,36 +20,65 @@ typedef struct prod
     struct prod *prox;
 }Product;
 
-/* Busca e insere */
+/* Busca e insere ordenado  */
 void search_insert(int newCode, Product** lst) {
     Product *p, *q, *nova;
+    char descrip[25];
+    int codeExist;
+
     p = NULL;
     q = *lst;
+    codeExist = 0;
 
-    while (q != NULL && q->code != newCode) {
+    scanf("%s", descrip);
+
+    /*Para saber se o novo codigo ja existe na lista */
+    while (q != NULL && q->code != newCode)
+    {
         p = q;
         q = q->prox;
     }
 
-    if (q == NULL) {
+    /* Marcador para o caso do novo codigo ja existirna lista  */
+    if (q != NULL)
+    {
+        codeExist++;
+    }
+
+    /* Reseto p e q para inserir em ordem alfabetica
+    considerando a primeira letra da descricao */
+    p = NULL;
+    q = *lst;
+    
+    /* Utilizando o strcmp para ordenar de acordo com a palavra
+    para que a palavra 'abc' venha depois da palavra 'aac' */
+    while (q != NULL && strcmp(q->description, descrip) < 0) {
+        p = q;
+        q = q->prox;
+    }
+
+    /*Caso codigo nao existir na lista, cadastra em ordem alfabetica*/
+    if (codeExist == 0)
+    {
         nova = (Product*)malloc(sizeof(Product));
-        nova->code = newCode; 
+        if (nova == NULL) {
+            printf("\nProblema ao alocar memoria");
+        }else{
+            nova->code = newCode;
+            strcpy(nova->description, descrip);
+            scanf("%d", &nova->quantity);   
+            scanf("%f", &nova->price);
+            nova->prox = q;
 
-        /* Cadastra restante das informacoes do produto */
-        scanf("%s", nova->description);
-        scanf("%d", &nova->quantity);   
-        scanf("%f", &nova->price);
+            if (p != NULL)
+                p->prox = nova;
+            else
+                *lst = nova;
 
-        nova->prox = NULL;
-
-        if (p != NULL)
-            p->prox = nova;
-        else
-            *lst = nova;
-
-        printf(" Produto %d inserido com sucesso!\n", newCode);
-    } else {
-        printf("[ERROR: Erro ao inserir o produto %d.]\n", newCode);
+            printf(" Produto %d inserido com sucesso!\n", newCode);
+        }
+    } else{
+        printf("[ERRO: Erro ao inserir o produto %d.]\n", newCode);
     }
 }
 
@@ -137,6 +166,53 @@ void get_product(Product *lst){
     }
 }
 
+
+/* Relatorio */
+/* A lista ja esta em ordem alfabetica.
+Como as comparacoes sao feitas de acordo com os valores da TABELA ASCII
+para cada caracter, sera ordenado entao primeiro as letras maiusculas de 'A' a 'Z'
+e logo em seguida sera ordenado os as letras minusculas de 'a' a 'z' */
+void generate_report(Product *lst){
+    Product *p;
+    FILE *relatorio;
+    char init;
+    p = lst;
+    /*Inciando com um valor menor do que as letras 
+    do alfabeto segundo a TABELA ASCII e pro nao conter
+    espacos na decricao*/
+    init = ' '; 
+    
+    relatorio = fopen("Relatorio.txt", "w");
+    if (relatorio == NULL)
+    {
+        printf("Erro ao abrir arquivo");
+        return;
+    }
+
+    for (p = lst; p != NULL; p = p->prox) {
+        /*Verifica se a primeira letra do produto ja foi mostrada na tela*/
+        if (p->description[0] > init)
+        {
+            printf("%c\n", p->description[0]);
+            fprintf(relatorio, "%c\n", p->description[0]);
+            init = p->description[0];
+        }
+        /*Mostrando no terminal*/
+        printf("\t%d;", p->code);
+        printf("%s;", p->description);
+        printf("%d;", p->quantity);
+        printf("%.2f\n", p->price);
+
+        /*Inserindo no arquivo Relatorio.txt*/
+        fprintf(relatorio,"\t%d;", p->code);
+        fprintf(relatorio,"%s;", p->description);
+        fprintf(relatorio,"%d;", p->quantity);
+        fprintf(relatorio,"%.2f\n", p->price);
+    }
+    fclose(relatorio);
+}
+
+
 /* Imprimi a lista de produtos */
 void imprime_lista(Product *lst) {
     Product* p;
@@ -153,12 +229,11 @@ void imprime_lista(Product *lst) {
         printf("Lista Vazia!\n");
 }
 
-
 /* 
 Recebe os Comandos (inserir, inserir excluir, atualizar, ...) 
 e chama a função correspondente
 */
-void pronpt(char *comando, Product **lst){
+void pronpt(char *comando, Product **lst, Product **reportList){
 
     int newCode;
     char flag[3];
@@ -194,7 +269,22 @@ void pronpt(char *comando, Product **lst){
             get_product(*lst);
         }
 
-        /*Recebe um novo comando apos finalizar o comando anterior*/
+        /* Comando: consultar */
+        if (!strcmp(comando,"consultar"))
+        {
+            get_product(*lst);
+        }
+
+        /* Comando: relatorio */
+        if (!strcmp(comando,"relatorio"))
+        {
+            generate_report(*lst);
+        }
+
+        /*Recebe um novo comando apos finalizar o comando anterior
+        Caso for sair, criar uma nova lista ordenada com os produtos 
+        de estoque baixo menor que 15
+        */
         scanf("%s", comando);
     }
 }
@@ -202,14 +292,15 @@ void pronpt(char *comando, Product **lst){
 
 int main(void){
 
-    Product *products;
+    Product *products, *reportList;
     char comando[10];
 
     products = NULL;
+    reportList = NULL;
 
     scanf("%s", comando);
     
-    pronpt(comando, &products);
+    pronpt(comando, &products, &reportList);
 
     imprime_lista(products);
 
