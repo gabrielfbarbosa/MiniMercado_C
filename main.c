@@ -63,6 +63,7 @@ void search_insert(int newCode, Product** lst) {
         nova = (Product*)malloc(sizeof(Product));
         if (nova == NULL) {
             printf("\nProblema ao alocar memoria");
+            return;
         }else{
             nova->code = newCode;
             strcpy(nova->description, descrip);
@@ -79,6 +80,7 @@ void search_insert(int newCode, Product** lst) {
         }
     } else{
         printf("Erro ao inserir o produto %d.\n", newCode);
+        return;
     }
 }
 
@@ -348,6 +350,22 @@ void checkout_menu(Product *lst){
     printf("Total %.2f\n", totalSalePrice);
 }
 
+/* help: Explica o motivo da escolha da estrutura */
+void help(){
+    printf("*************************************************************************************************************\n");
+    printf("*                                                                                                           *\n");
+    printf("* Estrutura de dados escolhida: Lista simplesmente encadeada ordenada.                                      *\n");
+    printf("* Motivo da escolha: Do meu ponto de vista e baseando-me no que foi visto em aula até o momento,            *\n");
+    printf("* devido a alguns pedidos de ordenação dos produtos exigidos durante o trabalho,                            *\n");
+    printf("* como a ordenação alfabética para o relatório e a ordenação não-decrescente para a operação sair,          *\n");
+    printf("* escolher essa estrutura evita uma ordenação durante a execução do código, o que geralmente,               *\n");
+    printf("* consome mais processamento e evita criar uma nova lista para inserir os itens ordenados,                  *\n");
+    printf("* assegurando um gasto menor de memória.                                                                    *\n");
+    printf("*                                                                                                           *\n");
+    printf("*************************************************************************************************************\n");
+
+}
+
 /* Imprimi a lista de produtos */
 void imprime_lista(Product *lst) {
     Product* p;
@@ -419,6 +437,12 @@ void pronpt(char *comando, Product **lst, Product **reportList){
         if (!strcmp(comando,"vender"))
         {
             checkout_menu(*lst);
+        }
+
+        /* Comando: help */
+        if (!strcmp(comando,"help"))
+        {
+            help();
         }
 
         /*Recebe um novo comando apos finalizar o comando anterior
