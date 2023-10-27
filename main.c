@@ -75,10 +75,10 @@ void search_insert(int newCode, Product** lst) {
             else
                 *lst = nova;
 
-            printf(" Produto %d inserido com sucesso!\n", newCode);
+            printf("Produto %d inserido com sucesso!\n", newCode);
         }
     } else{
-        printf("[ERRO: Erro ao inserir o produto %d.]\n", newCode);
+        printf("Erro ao inserir o produto %d.\n", newCode);
     }
 }
 
@@ -100,9 +100,9 @@ void search_delete(int newCode, Product** lst) {
             *lst = q->prox;
         }
         free(q);
-        printf(" Produto %d excluído com sucesso!\n", newCode);
+        printf("Produto %d excluído com sucesso!\n", newCode);
     }else{
-        printf("[ERROR: Produto %d não cadastrado!]\n", newCode);
+        printf("Produto %d não cadastrado!\n", newCode);
     }
 }
 
@@ -123,18 +123,18 @@ void update_product(char *flag ,int newCode, Product *lst) {
         if (!strcmp(flag, "-q")) {
             scanf("%d", &newQuantity);
             p->quantity = newQuantity;
-            printf(" Produto %d atualizado \n", newCode);
+            printf("Produto %d atualizado \n", newCode);
         } 
 
         /* Atualiza o Preco do produto */
         if (!strcmp(flag, "-v")) {
             scanf("%f", &newPrice);
             p->price = newPrice;
-            printf(" Produto %d atualizado \n", newCode);
+            printf("Produto %d atualizado \n", newCode);
         } 
         
     }else{
-        printf("[ERROR: Produto %d não cadastrado!]\n", newCode);
+        printf("Produto %d não cadastrado!\n", newCode);
     }
 }
 
@@ -161,7 +161,7 @@ void get_product(Product *lst){
         }
         if (cont == 0)
         {
-            printf("[ERROR: Nenhum produto encontrado!]\n");
+            printf("Nenhum produto encontrado!\n");
         }
     }
 }
@@ -212,6 +212,92 @@ void generate_report(Product *lst){
     fclose(relatorio);
 }
 
+/* Read e Importar */
+/* Import: funcao para importar os produtos lidos no
+arquivo para a lista utilizada pelo programa */
+void import(int fileCode, char *fileDescription, int fileQuantity, float filePrice, Product **lst, int *registered) {
+    Product *p, *q, *nova;
+    int codeExist;
+
+    p = NULL;
+    q = *lst;
+    codeExist = 0;
+
+    while (q != NULL && q->code != fileCode)
+    {
+        p = q;
+        q = q->prox;
+    }
+
+    if (q != NULL)
+    {
+        codeExist++;
+    }
+
+    p = NULL;
+    q = *lst;
+    
+    while (q != NULL && strcmp(q->description, fileDescription) < 0) {
+        p = q;
+        q = q->prox;
+    }
+
+    if (codeExist == 0)
+    {
+        nova = (Product*)malloc(sizeof(Product));
+        if (nova == NULL) {
+            printf("\nProblema ao alocar memoria");
+        }else{
+            nova->code = fileCode;
+            strcpy(nova->description, fileDescription);
+            nova->quantity = fileQuantity;   
+            nova->price = filePrice;
+            nova->prox = q;
+
+            if (p != NULL)
+                p->prox = nova;
+            else
+                *lst = nova;
+
+            *registered = *registered + 1;
+        }
+    }
+}
+
+/* read: Funcao para ler o arquivo e inserir na lista utilziada no projeto
+para se ter uma unica lista com todos os produtos e garantir que nao tenha 
+codigo repetido */
+void read_file(char *fileName, Product  **lst){
+    FILE *fileImport;
+    int productQuantity, fileCode, fileQuantity, registered;
+    float filePrice;
+    char fileDescription[25];
+
+    /*Confirma a quantidade de produtos importados do arquivo*/
+    registered = 0; 
+    
+    fileImport = fopen(fileName, "r");
+    if (fileImport == NULL)
+    {
+        printf("Erro ao abrir arquivo %s", fileName);
+        return;
+    }
+
+    fscanf(fileImport, "%d;", &productQuantity);
+
+    while (feof(fileImport) == 0)
+    {
+        fscanf(fileImport, "%d;", &fileCode);
+        fscanf(fileImport, "%[^;];", fileDescription);
+        fscanf(fileImport, "%d;", &fileQuantity);
+        fscanf(fileImport, "%f", &filePrice);
+        import(fileCode, fileDescription, fileQuantity, filePrice, lst, &registered);
+    }
+
+    printf("%d produtos importados!\n", registered);
+    
+    fclose(fileImport);
+}
 
 /* Imprimi a lista de produtos */
 void imprime_lista(Product *lst) {
@@ -236,7 +322,7 @@ e chama a função correspondente
 void pronpt(char *comando, Product **lst, Product **reportList){
 
     int newCode;
-    char flag[3];
+    char flag[3], fileName[20];
 
     while (strcmp(comando, "sair"))
     {
@@ -280,6 +366,15 @@ void pronpt(char *comando, Product **lst, Product **reportList){
         {
             generate_report(*lst);
         }
+        
+        /* Comando: importar */
+        if (!strcmp(comando,"importar"))
+        {
+            scanf("%s", fileName);
+            read_file(fileName, lst);
+        }
+
+
 
         /*Recebe um novo comando apos finalizar o comando anterior
         Caso for sair, criar uma nova lista ordenada com os produtos 
