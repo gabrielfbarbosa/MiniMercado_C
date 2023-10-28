@@ -164,7 +164,6 @@ void get_product(Product *lst){
         if (cont == 0)
         {
             printf("Nenhum produto encontrado!\n");
-            printf("******* ERRO AQUI *******\n");
         }
     }
 }
@@ -270,23 +269,23 @@ void import(int fileCode, char *fileDescription, int fileQuantity, float filePri
 /* read: Funcao para ler o arquivo e inserir na lista utilziada no projeto
 para se ter uma unica lista com todos os produtos e garantir que nao tenha 
 codigo repetido */
-void read_file(char *fileName, Product  **lst){
+void read_file_txt(char *fileName, Product  **lst){
     FILE *fileImport;
     int productQuantity, fileCode, fileQuantity, registered;
     float filePrice;
     char fileDescription[25];
 
-    /*Confirma a quantidade de produtos importados do arquivo*/
+    /*Confirmar a quantidade de produtos importados do arquivo*/
     registered = 0; 
     
     fileImport = fopen(fileName, "r");
     if (fileImport == NULL)
     {
-        printf("Erro ao abrir arquivo %s", fileName);
+        printf("Erro ao abrir arquivo %s\n", fileName);
         return;
     }
 
-    fscanf(fileImport, "%d;", &productQuantity);
+    fscanf(fileImport, "%d\n", &productQuantity);
 
     while (feof(fileImport) == 0)
     {
@@ -363,7 +362,121 @@ void help(){
     printf("* assegurando um gasto menor de memória.                                                                    *\n");
     printf("*                                                                                                           *\n");
     printf("*************************************************************************************************************\n");
+}
 
+/* Ordenar por codigo 
+sort_product_code: Ordena os produtos por codigo
+para ser salvo no arquivo Produto.dat */
+void sort_product_code(Product **lst) {
+    Product *sorted, *current, *next, *search;
+
+    sorted = NULL;
+    current = *lst;
+
+    while (current != NULL) {
+        next = current->prox; /*Guarda o Produto da frente para a proxima comparacao comecar a partir dele*/
+        if (sorted == NULL || sorted->code >= current->code) {
+            current->prox = sorted; /*Se for o primeiro Produto ou se o codigo for menor que o codigo do primeiro Produto*/
+            sorted = current; /*O primeiro Produto vai ser o atual*/
+        } else {
+            search = sorted;
+            while (search->prox != NULL && search->prox->code < current->code) {
+                search = search->prox;/*Procura pelo proximo Produto para inserir*/
+            }
+            current->prox = search->prox; /*Inserir o Produto no lugar certo*/
+            search->prox = current; 
+        }
+        current = next; /*Proximo Produto*/
+    }
+    *lst = sorted;/*Atualiza a lista*/
+}
+
+/* Ordenar estoque baixo
+sort_product_quantity: Ordena os produtos por sua quantidade
+quando abaixo de 15. Caso a quantidade for maior que 15 nao salva o produto */
+void sort_product_quantity(Product **lst) {
+    Product *sorted, *current, *next, *search;
+
+    sorted = NULL;
+    current = *lst;
+
+    while (current != NULL) {
+
+        next = current->prox;
+        if (current->quantity <= 15)
+        {
+            if (sorted == NULL || sorted->quantity >= current->quantity) {
+                current->prox = sorted;
+                sorted = current;
+            } else {
+                search = sorted;
+                while (search->prox != NULL && search->prox->quantity < current->quantity) {
+                    search = search->prox;
+                }
+                current->prox = search->prox;
+                search->prox = current;
+            }
+        }
+        current = next;
+    }
+    *lst = sorted;
+}
+
+/* Sair 
+terminate_program: Cria e preenche os arquivos Comprar.txt
+e Produtos.dat, ao final, finaliza todo o programa */
+void terminate_program(Product **lst){
+    Product *p;
+    FILE *buyFile, *productsFile;
+    int productCount;
+
+    productCount = 0;
+
+    productsFile = fopen("Produtos.dat", "wb");
+    if (productsFile == NULL)
+    {
+        printf("Erro ao escrever no arquivo Produtos.dat");
+        return;
+    }
+
+    buyFile = fopen("Comprar.txt", "w");
+    if (buyFile == NULL)
+    {
+        printf("Erro ao escrever no arquivo Produtos.dat");
+        return;
+    }
+
+    /*Conta produtos na lista*/
+    for(p = *lst; p != NULL; p = p->prox){
+        productCount++;
+    }
+
+    fprintf(productsFile,"%d\n", productCount);
+    sort_product_code(lst);
+
+    for(p = *lst; p != NULL; p = p->prox){
+        fprintf(productsFile,"%d;", p->code);
+        fprintf(productsFile,"%s;", p->description);
+        fprintf(productsFile,"%d;", p->quantity);
+        fprintf(productsFile,"%.2f\n", p->price);
+    }
+    fclose(productsFile);
+
+    sort_product_quantity(lst);
+    for(p = *lst; p != NULL; p = p->prox){
+        /* Salva informacoes no arquivo*/
+        fprintf(buyFile,"%d - ", p->code);
+        fprintf(buyFile,"%s - ", p->description);
+        fprintf(buyFile,"%d\n", p->quantity);
+
+        /* Moastra informacoes na tela*/
+        printf("%d - ", p->code);
+        printf("%s - ", p->description);
+        printf("%d\n", p->quantity);
+    }
+    fclose(buyFile);
+
+    exit(0); /*Finaliza o programa*/
 }
 
 /* Imprimi a lista de produtos */
@@ -380,11 +493,13 @@ void imprime_lista(Product *lst) {
         }
     }else
         printf("Lista Vazia!\n");
+    
+    printf("\n");
 }
 
 /* Recebe os Comandos (inserir, inserir excluir, atualizar, ...) 
 e chama a função correspondente */
-void pronpt(char *comando, Product **lst, Product **reportList){
+void pronpt(char *comando, Product **lst){
 
     int newCode;
     char flag[3], fileName[20];
@@ -430,7 +545,7 @@ void pronpt(char *comando, Product **lst, Product **reportList){
         if (!strcmp(comando,"importar"))
         {
             scanf("%s", fileName);
-            read_file(fileName, lst);
+            read_file_txt(fileName, lst);
         }
 
         /* Comando: vender */
@@ -445,28 +560,24 @@ void pronpt(char *comando, Product **lst, Product **reportList){
             help();
         }
 
-        /*Recebe um novo comando apos finalizar o comando anterior
-        Caso for sair, criar uma nova lista ordenada com os produtos 
-        de estoque baixo menor que 15
-        */
         scanf("%s", comando);
     }
+
+    /* Comando: help */
+    terminate_program(lst);
 }
 
 
 int main(void){
 
-    Product *products, *reportList;
+    Product *products;
     char comando[10];
 
     products = NULL;
-    reportList = NULL;
 
     scanf("%s", comando);
     
-    pronpt(comando, &products, &reportList);
-
-    imprime_lista(products);
+    pronpt(comando, &products);
 
     printf("\n\n");
     return 0;
