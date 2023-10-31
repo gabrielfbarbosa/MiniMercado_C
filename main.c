@@ -140,7 +140,12 @@ void update_product(char *flag ,int newCode, Product *lst) {
     }
 }
 
-/* Consulta produto */
+/* Consulta produto
+get_product: Retorna os produtos que tem em sua descricao, a sequencia
+de caracteres digiada pelo usuario. Como na documentacao do trabalho 
+nao diz nada a respeito da ordem a ser impressa na tela, entao para evitar 
+mais umka ordenacao, esta sendo impresso ordenados pela descricao do produto,
+como esta minha lista */
 void get_product(Product *lst){
     Product *p;
     char searchQuery[25];
@@ -200,15 +205,15 @@ void generate_report(Product *lst){
             init = p->description[0];
         }
         /*Mostrando no terminal*/
-        printf("\t%d;", p->code);
-        printf("%s;", p->description);
-        printf("%d;", p->quantity);
+        printf("\t%d - ", p->code);
+        printf("%s - ", p->description);
+        printf("%d - ", p->quantity);
         printf("%.2f\n", p->price);
 
         /*Inserindo no arquivo Relatorio.txt*/
-        fprintf(relatorio,"\t%d;", p->code);
-        fprintf(relatorio,"%s;", p->description);
-        fprintf(relatorio,"%d;", p->quantity);
+        fprintf(relatorio,"\t%d - ", p->code);
+        fprintf(relatorio,"%s - ", p->description);
+        fprintf(relatorio,"%d - ", p->quantity);
         fprintf(relatorio,"%.2f\n", p->price);
     }
     fclose(relatorio);
@@ -269,7 +274,7 @@ void import(int fileCode, char *fileDescription, int fileQuantity, float filePri
 /* read: Funcao para ler o arquivo e inserir na lista utilziada no projeto
 para se ter uma unica lista com todos os produtos e garantir que nao tenha 
 codigo repetido */
-void read_file_txt(char *fileName, Product  **lst){
+void read_file(char *fileName, Product  **lst){
     FILE *fileImport;
     int productQuantity, fileCode, fileQuantity, registered;
     float filePrice;
@@ -281,7 +286,10 @@ void read_file_txt(char *fileName, Product  **lst){
     fileImport = fopen(fileName, "r");
     if (fileImport == NULL)
     {
-        printf("Erro ao abrir arquivo %s\n", fileName);
+        if (strstr(fileName, "txt"))
+        {
+            printf("Erro ao importar do arquivo %s\n", fileName);
+        }
         return;
     }
 
@@ -296,7 +304,11 @@ void read_file_txt(char *fileName, Product  **lst){
         import(fileCode, fileDescription, fileQuantity, filePrice, lst, &registered);
     }
 
-    printf("%d produtos importados!\n", registered);
+    if (strstr(fileName, "txt"))
+    {
+        printf("%d produtos importados!\n", registered);
+    }
+    
     
     fclose(fileImport);
 }
@@ -325,7 +337,7 @@ void checkout_process(int code, Product *lst, float *sale){
             return;
         }else{
             q->quantity = q->quantity - 1;
-            printf("%d - %s - %.2f\n", q->code, q->description, q->price);
+            printf("%d - %s - %.2f -- %d\n", q->code, q->description, q->price, q->quantity);
             *sale = *sale + q->price;
         }
     }
@@ -364,7 +376,7 @@ void help(){
     printf("*************************************************************************************************************\n");
 }
 
-/* Ordenar por codigo 
+/* Ordenar por codigo, utilizando o modelo Insertion Sort
 sort_product_code: Ordena os produtos por codigo
 para ser salvo no arquivo Produto.dat */
 void sort_product_code(Product **lst) {
@@ -476,7 +488,10 @@ void terminate_program(Product **lst){
     }
     fclose(buyFile);
 
-    exit(0); /*Finaliza o programa*/
+    /*Como conversado com professor Mauro, a utilizacao da funcao 'exit(0)',
+    foi o metodo que encontrei para que o prgram relamente finalize
+    salvando o estado em que ase encontrar quando der erro na alocacao de memoria */
+    exit(0); 
 }
 
 /* Imprimi a lista de produtos */
@@ -545,7 +560,7 @@ void pronpt(char *comando, Product **lst){
         if (!strcmp(comando,"importar"))
         {
             scanf("%s", fileName);
-            read_file_txt(fileName, lst);
+            read_file(fileName, lst);
         }
 
         /* Comando: vender */
@@ -563,7 +578,7 @@ void pronpt(char *comando, Product **lst){
         scanf("%s", comando);
     }
 
-    /* Comando: help */
+    /* Comando: sair */
     terminate_program(lst);
 }
 
@@ -574,6 +589,8 @@ int main(void){
     char comando[10];
 
     products = NULL;
+
+    read_file("Produtos.dat", &products);
 
     scanf("%s", comando);
     
