@@ -7,14 +7,6 @@
 *                                         *
 *******************************************/
 
-/* Email: 
-Boa noite Professor. Uma duvida que me sugeriu durante a mudança do fscanf e fprintf para o 
-fread e fwrite, eu vou utilizar eles apenas para os binários certo?
-A minha função read_file, é utilizada também para o comando 'importar <nome do arquivo>', 
-eu não estou conseguindo usar o fread para ler o arquivo importado.
-A solução que encontrei foi fazer funções separadas uma para arquivos txt, e uma para ler arquivos binarios.
-Ao conversar com  a Ivone na aula, ela comentou de sempre ser binario os arquivos o programa deve ler, a não ser a criação do arquivo */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +22,7 @@ typedef struct prod
 }Product;
 
 /* Busca e insere ordenado  */
-void search_insert(int newCode, Product** lst) {
+int search_insert(int newCode, Product** lst, int *productCount) {
     Product *p, *q, *nova;
     char descrip[25];
     int codeExist;
@@ -41,38 +33,40 @@ void search_insert(int newCode, Product** lst) {
 
     scanf("%s", descrip);
 
-    /*Para saber se o novo codigo ja existe na lista */
+    /* Verifica se o novo código já existe na lista */
     while (q != NULL && q->code != newCode)
     {
         p = q;
         q = q->prox;
     }
 
-    /* Marcador para o caso do novo codigo ja existirna lista  */
+    /* Marcador para o caso do novo código já existir na lista  */
     if (q != NULL)
     {
         codeExist++;
     }
 
-    /* Reseto p e q para inserir em ordem alfabetica
-    considerando a primeira letra da descricao */
+    /* Resetando p e q para inserir em ordem alfabética 
+    considerando a primeira letra da descrição */
     p = NULL;
     q = *lst;
     
-    /* Utilizando o strcmp para ordenar de acordo com a palavra
-    para que a palavra 'abc' venha depois da palavra 'aac' */
+    /* Utilizando o strcmp para ordenar de acordo com a palavra, 
+    para que a palavra 'abc' venha depois de 'aac' */
     while (q != NULL && strcmp(q->description, descrip) < 0) {
         p = q;
         q = q->prox;
     }
 
-    /*Caso codigo nao existir na lista, cadastra em ordem alfabetica*/
+    /* Caso código não exista na lista, cadastra em ordem alfabética */
     if (codeExist == 0)
     {
         nova = (Product*)malloc(sizeof(Product));
         if (nova == NULL) {
-            printf("\nProblema ao alocar memoria");
-            return;
+            printf("Erro de alocação de memória.\n");
+            /* Retorna -1 para encerrar o programa e 
+            salvar o estado do mesmo até o momento */
+            return -1;
         }else{
             nova->code = newCode;
             strcpy(nova->description, descrip);
@@ -86,15 +80,18 @@ void search_insert(int newCode, Product** lst) {
                 *lst = nova;
 
             printf("Produto %d inserido com sucesso!\n", newCode);
+            *productCount = *productCount + 1;
         }
+        /* Retorna 1 para o programa prosseguir após inserir mais um produto */
+        return 1;
     } else{
         printf("Erro ao inserir o produto %d.\n", newCode);
-        return;
+        return 1;
     }
 }
 
 /* Busca e remove */
-void search_delete(int newCode, Product** lst) {
+void search_delete(int newCode, Product** lst, int *productCount) {
     Product *p, *q;
     p = NULL;
     q = *lst;
@@ -112,6 +109,7 @@ void search_delete(int newCode, Product** lst) {
         }
         free(q);
         printf("Produto %d excluído com sucesso!\n", newCode);
+        *productCount = *productCount - 1;
     }else{
         printf("Produto %d não cadastrado!\n", newCode);
     }
@@ -180,6 +178,10 @@ void get_product(Product *lst){
             printf("Nenhum produto encontrado!\n");
         }
     }
+    else
+    {
+        printf("Nenhum produto encontrado!\n");
+    }
 }
 
 
@@ -228,60 +230,10 @@ void generate_report(Product *lst){
     fclose(relatorio);
 }
 
-/* Read e Importar */
-/* Import: funcao para importar os produtos lidos no
-arquivo para a lista utilizada pelo programa */
-void import(int fileCode, char *fileDescription, int fileQuantity, float filePrice, Product **lst, int *registered) {
-    Product *p, *q, *nova;
-    int codeExist;
-
-    p = NULL;
-    q = *lst;
-    codeExist = 0;
-
-    while (q != NULL && q->code != fileCode)
-    {
-        p = q;
-        q = q->prox;
-    }
-
-    if (q != NULL)
-    {
-        codeExist++;
-    }
-
-    p = NULL;
-    q = *lst;
-    
-    while (q != NULL && strcmp(q->description, fileDescription) < 0) {
-        p = q;
-        q = q->prox;
-    }
-
-    if (codeExist == 0)
-    {
-        nova = (Product*)malloc(sizeof(Product));
-        if (nova == NULL) {
-            printf("\nProblema ao alocar memoria");
-            return;
-        }else{
-            nova->code = fileCode;
-            strcpy(nova->description, fileDescription);
-            nova->quantity = fileQuantity;   
-            nova->price = filePrice;
-            nova->prox = q;
-
-            if (p != NULL)
-                p->prox = nova;
-            else
-                *lst = nova;
-
-            *registered = *registered + 1;
-        }
-    }
-}
-
-void import_2(Product *productFile, Product **lst, int *registered) {
+/* Importar */
+/* Import: função para importar os produtos lidos no arquivo 
+para a lista utilizada pelo programa */
+void import(Product *productFile, Product **lst, int *registered) {
     Product *p, *q;
     int codeExist;
 
@@ -321,66 +273,69 @@ void import_2(Product *productFile, Product **lst, int *registered) {
     }
 }
 
-/* Como conversado com a prfessora Ivone na aula do dia 01/11/2023
-a operação de importar <nome do arquivo> também sera considerado que seja
-um arquivo do tipo binario.
-read: Funcao para ler o arquivo binarios e inserir na lista utilziada no projeto
+/* Como conversado com a professora Ivone na aula do dia 01/11/2023,
+a operação 'importar <nome do arquivo>' será considerada que seja
+importado arquivos do tipo binário.
+read_file: Funcao para ler o arquivo binarios e inserir na lista utilziada no projeto
 para se ter uma unica lista com todos os produtos e garantir que nao tenha 
 codigo repetido */
-void read_file(char *fileName, Product  **lst){
+int read_file(char *fileName, Product  **lst){
     FILE *fileImport;
     Product *productFile;
     int registered, quantityProducts;
 
-    /* Aloco memoria para receber do arquivo */
-    productFile = (Product*)malloc(sizeof(Product));
-    if (productFile == NULL)
+    /*Confirmar a quantidade de produtos importados do arquivo*/
+    registered = 0; 
+        
+    fileImport = fopen(fileName, "rb");
+    if (fileImport == NULL)
     {
-        printf("Problema ao alocar memoria");
+        /*Mostrar erro apenas quando for arquivos diferente do Produtos.dat
+        Ao inicializar o programa e ler o Produtos.dat, não exibir erro*/
+        if (!strstr(fileName, "Produtos.dat")) 
+        {
+            printf("Erro ao importar do arquivo %s\n", fileName);
+        }
     }
     else
     {
-        /*Confirmar a quantidade de produtos importados do arquivo*/
-        registered = 0; 
+        /* Faz a leitura da quantidade de registros na primeira linha do arquivo*/
+        fread(&quantityProducts, sizeof(int), 1, fileImport);
         
-        fileImport = fopen(fileName, "rb");
-        if (fileImport == NULL)
-        {
-            /*Mostrar erro apenas quando for arquivos diferente do Produtos.dat
-            Ao inicializar o programa e ler o Produtos.dat, nao exibir erro*/
-            if (!strstr(fileName, "Produtos.dat")) 
-            {
-                printf("Erro ao importar do arquivo %s\n", fileName);
-            }
-        }
-        else
-        {
-            /* Faz a leitura da quantidade de registros no arquivo*/
-            fread(&quantityProducts, sizeof(int), 1, fileImport);
-            
-            /* Faz a leitura dos registros do arquivo enquanto tiver registros,
-            caso contrario fread é diferente do 3 parametro passado para ela,
-            nesse caso o valor 1 */
-            while(fread(productFile, sizeof(Product), 1, fileImport) == 1) 
-            {
-                import_2(productFile, lst, &registered);
+        /* Faz a leitura dos registros do arquivo enquanto tiver registros,
+        caso contrario fread é diferente do 3 parametro passado para ela,
+        nesse caso o valor 1 */
 
-                productFile = (Product*)malloc(sizeof(Product));
-                if (productFile == NULL)
-                {
-                    printf("Problema ao alocar memoria");
-                }
-            }
-            /* Mostrar a quantidade de produtos importados do arquivo apenas
-            quando for arquivos diferente do Produtos.dat. Ao inicializar o
-            programa e ler o Produtos.dat, não exibir quantidade importada */
-            if (!strstr(fileName, "Produtos.dat"))
+        while (!feof(fileImport)) {
+            
+            /* Aloca memoria para receber os registros do arquivo */
+            productFile = (Product*)malloc(sizeof(Product));
+            if (productFile == NULL)
             {
-                printf("%d produtos importados!\n", registered);
+                printf("Erro de alocação de memória.\n");
+                fclose(fileImport);
+                return -1;
             }
-            fclose(fileImport);
+            
+            /* Caso tenha registro a ser lido, importa para a lista */
+            if (fread(productFile, sizeof(Product), 1, fileImport) == 1) 
+            {
+                import(productFile, lst, &registered);
+            }
         }
+
+        /* Mostrar a quantidade de produtos importados do arquivo apenas
+        quando for arquivos diferente do Produtos.dat. Ao inicializar o
+        programa e ler o Produtos.dat, não exibir quantidade importada */
+        if (!strstr(fileName, "Produtos.dat"))
+        {
+            printf("%d produtos importados!\n", registered);
+        }
+
+        free(productFile);
+        fclose(fileImport);
     }
+    return registered;
 }
 
 /* checkout_process: Funcao que faz a verificacao se um produto
@@ -504,15 +459,12 @@ void sort_product_quantity(Product **lst) {
     *lst = sorted;
 }
 
-/* Sair 
-terminate_program: Cria e preenche os arquivos Comprar.txt
-e Produtos.dat, ao final, finaliza todo o programa */
-void terminate_program(Product **lst){
-    Product *p;
+/* Sair */
+/* terminate_program: Encerra o programa e preenche os 
+arquivos Comprar.txt e Produtos.dat */
+void terminate_program(Product **lst, int *productCount){
+    Product *p, *next;
     FILE *buyFile, *productsFile;
-    int productCount;
-
-    productCount = 0;
 
     productsFile = fopen("Produtos.dat", "wb");
     if (productsFile == NULL)
@@ -528,16 +480,9 @@ void terminate_program(Product **lst){
         return;
     }
 
-    /*Conta produtos na lista*/
-    for(p = *lst; p != NULL; p = p->prox){
-        productCount++;
-    }
-
-    /*fprintf(productsFile,"%d\n", productCount);*/
     fwrite(&productCount, sizeof(int), 1, productsFile);
     
     sort_product_code(lst);
-
     for(p = *lst; p != NULL; p = p->prox){
         /* Salva informacoes no arquivo*/
         fwrite(p, sizeof(Product), 1, productsFile);
@@ -558,38 +503,20 @@ void terminate_program(Product **lst){
     }
     fclose(buyFile);
 
-    /*Como conversado com professor Mauro, a utilizacao da funcao 'exit(0)',
-    foi o metodo que encontrei para que o prgram relamente finalize
-    salvando o estado em que ase encontrar quando der erro na alocacao de memoria */
-
-    /*Uma alternativa seria retornar valores inteiros para as 
-    funções que chamaram ela e encerrar laços caso necessário.*/
-    /*exit(0); */
+    /*Libera toda memoria alocada */
+    p = *lst;
+    while (p != NULL) {
+        next = p->prox;  
+        free(p);         
+        p = next;        
+    }
+    *lst = NULL;
 }
 
-/* Imprimi a lista de produtos */
-void imprime_lista(Product *lst) {
-    Product* p;
-    printf("Lista de Produtos:\n\t");
-    if (lst != NULL)
-    {
-        for (p = lst; p != NULL; p = p->prox) {
-            printf("%d;", p->code);
-            printf("%s;", p->description);
-            printf("%d;", p->quantity);
-            printf("%.2f\n\t", p->price);
-        }
-    }else
-        printf("Lista Vazia!\n");
-    
-    printf("\n");
-}
-
-/* Recebe os Comandos (inserir, inserir excluir, atualizar, ...) 
+/* Recebe os comandos (inserir, excluir, atualizar, ...) 
 e chama a função correspondente */
-void pronpt(char *comando, Product **lst){
-
-    int newCode;
+void pronpt(char *comando, Product **lst, int *productCount){
+    int newCode, response;
     char flag[3], fileName[20];
 
     while (strcmp(comando, "sair"))
@@ -598,15 +525,14 @@ void pronpt(char *comando, Product **lst){
         if (!strcmp(comando,"inserir"))
         {
             scanf("%d", &newCode);
-            search_insert(newCode, lst);
-            /*imprime_lista(*lst);*/
+            response = search_insert(newCode, lst, productCount);
         }
 
         /* Comando: excluir */
         if (!strcmp(comando,"excluir"))
         {
             scanf("%d", &newCode);
-            search_delete(newCode, lst);
+            search_delete(newCode, lst, productCount);
         }
 
         /* Comando: atualizar */
@@ -633,7 +559,8 @@ void pronpt(char *comando, Product **lst){
         if (!strcmp(comando,"importar"))
         {
             scanf("%s", fileName);
-            read_file(fileName, lst);
+            response = read_file(fileName, lst);
+            *productCount = *productCount + response;
         }
 
         /* Comando: vender */
@@ -648,25 +575,34 @@ void pronpt(char *comando, Product **lst){
             help();
         }
 
-        scanf("%s", comando);
+        if(response == -1)
+        { /*Erro ao alocar memoria*/
+            comando = "sair";
+        } else {
+            scanf("%s", comando);
+        }
     }
-
-    /* Comando: sair */
-    terminate_program(lst);
 }
 
 int main(void){
 
     Product *products;
     char comando[10];
+    int productCount, response;
 
     products = NULL;
+    productCount = 0;
 
-    read_file("Produtos.dat", &products);
+    response = read_file("Produtos.dat", &products);
 
     scanf("%s", comando);
     
-    pronpt(comando, &products);
+    pronpt(comando, &products, &productCount);
+
+    productCount = response + productCount;
+
+    /* Comando: sair */
+    terminate_program(&products, &productCount);
 
     printf("\n\n");
     return 0;
