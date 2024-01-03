@@ -173,7 +173,7 @@ int read_file_txt(char *fileNameTxt, Product  **lst){
 int read_file_dat(Product  **lst){
     FILE *fileImportDat;
     Product *productFile;
-    int registered, quantityProducts;
+    int registered, quantityProducts, readCount;
 
     /*Confirmar a quantidade de produtos importados do arquivo*/
     registered = 0;
@@ -188,6 +188,7 @@ int read_file_dat(Product  **lst){
     Assim em uma segunda utilização do programa caso exita o Produtos.dat, ele utiliza
     apenas da leitura sem escrever um conteudo "vazio", como acontece ao utilizar o 
     programa pela primeira vez */
+    /*Para um Produtos.dat vazio, ainda esta dando falaha de segmentação*/
     fileImportDat = fopen("Produtos.dat", "rb");
     if (fileImportDat == NULL) {
         /* Se o arquivo não existir, abra-o para escrita e crie o arquivo*/
@@ -202,25 +203,28 @@ int read_file_dat(Product  **lst){
     else
     {
         /* Faz a leitura da quantidade de registros na primeira linha do arquivo*/
-        fread(&quantityProducts, sizeof(int), 1, fileImportDat);
-        
-        while (!feof(fileImportDat)) {
-            
-            /* Aloca memoria para receber os registros do arquivo */
-            productFile = (Product*)malloc(sizeof(Product));
-            if (productFile == NULL)
-            {
-                printf("Erro de alocação de memória.\n");
-                return -1;
+        readCount = fread(&quantityProducts, sizeof(int), 1, fileImportDat);
+
+        if (readCount == 1)
+        {
+            while (!feof(fileImportDat)) {
+                
+                /* Aloca memoria para receber os registros do arquivo */
+                productFile = (Product*)malloc(sizeof(Product));
+                if (productFile == NULL)
+                {
+                    printf("Erro de alocação de memória.\n");
+                    return -1;
+                }
+                
+                /* Caso tenha registro a ser lido, importa para a lista */
+                if (fread(productFile, sizeof(Product), 1, fileImportDat) == 1) 
+                {
+                    import_dat(productFile, lst, &registered);
+                }
             }
-            
-            /* Caso tenha registro a ser lido, importa para a lista */
-            if (fread(productFile, sizeof(Product), 1, fileImportDat) == 1) 
-            {
-                import_dat(productFile, lst, &registered);
-            }
+            free(productFile);
         }
-        free(productFile);
     }
     fclose(fileImportDat);
     return registered;
